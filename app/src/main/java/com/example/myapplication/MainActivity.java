@@ -18,10 +18,15 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.zxing.client.android.Intents;
 import com.google.zxing.integration.android.IntentIntegrator;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class MainActivity extends Activity implements View.OnClickListener{
@@ -40,7 +45,16 @@ public class MainActivity extends Activity implements View.OnClickListener{
         mResult = (TextView)findViewById(R.id.result);
         mReadBtn.setOnClickListener(this);
 
+//        FirebaseDatabase database = FirebaseDatabase.getInstance();
+//        DatabaseReference myRef = database.getReference("project").child("UserAccount").child("xWbql1fD4bQuMt6hWNbkinwrCSH2").child("Tokens").child("백반");
 
+//        UserToken userToken = new UserToken();
+//        userToken.setMenuName("menuName");
+//        userToken.setMenuPrice(999999);
+//        userToken.setTokenNumber(9999);
+//        userToken.setPayMethod("payMethod");
+//
+//        myRef.setValue(userToken);
 
     }
 
@@ -55,13 +69,12 @@ public class MainActivity extends Activity implements View.OnClickListener{
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
 
         switch (requestCode) {
             case IntentIntegrator.REQUEST_CODE :
                 if (resultCode == Activity.RESULT_OK) {
                     mFirebaseAuth = FirebaseAuth.getInstance();
-
+                    mDatabaseRef = FirebaseDatabase.getInstance().getReference("project");
                     String contents = data.getStringExtra(Intents.Scan.RESULT);
                     Log.d("TAG", "OK");
                     Log.d("TAG", "RESULT CONTENT : " + contents);
@@ -73,6 +86,7 @@ public class MainActivity extends Activity implements View.OnClickListener{
 
                     menuName = uniToKor(menuName);
                     menuName = menuName.substring(0, menuName.length()-1);
+
 
 
 
@@ -90,11 +104,13 @@ public class MainActivity extends Activity implements View.OnClickListener{
                                             String existTokenNumber = String.valueOf(dataSnapshot.child("tokenNumber").getValue());
                                             tokenNumber = Integer.parseInt(existTokenNumber);
 
-                                            int menuPrice = (int) dataSnapshot.child("menuPrice").getValue();
-                                            String payMethod = (String) dataSnapshot.child("payMethod").getValue();
-                                            String menuName = (String) dataSnapshot.child("menuName").getValue();
+                                            String strMenuPrice = String.valueOf(dataSnapshot.child("menuPrice").getValue());
+                                            int menuPrice = Integer.parseInt(strMenuPrice);
 
-                                            tokenNumber -= 1; // 식권 한 개 사용
+                                            String payMethod = String.valueOf(dataSnapshot.child("payMethod").getValue());
+                                            String menuName = String.valueOf(dataSnapshot.child("menuName").getValue());
+
+                                            tokenNumber = tokenNumber - 1; // 식권 한 개 사용
 
                                             UserToken userToken = new UserToken();
                                             userToken.setMenuName(menuName);
@@ -106,15 +122,25 @@ public class MainActivity extends Activity implements View.OnClickListener{
                                             mDatabaseRef.child("UserAccount").child(UID).child("Tokens").child(menuName).setValue(userToken);
 
                                             Toast.makeText(getApplicationContext(), menuName + "식권 사용", Toast.LENGTH_LONG).show();
+                                        }else{
+
+                                            Toast.makeText(getApplicationContext(), "실패1", Toast.LENGTH_LONG).show();
                                         }
                                     }else{
-                                        Toast.makeText(getApplicationContext(), "실패", Toast.LENGTH_LONG).show();
+
+                                        Toast.makeText(getApplicationContext(), "실패2", Toast.LENGTH_LONG).show();
                                     }
                                 }
                             });
 
+
+
+
+
+
                     mResult.setText(menuName +"\n"+menuName.length()+"\n" +menuName.getClass().getName()+ "\n\n" + UID +"\n"+UID.length()+ "\n" +UID.getClass().getName()) ;
                 } else {
+                    super.onActivityResult(requestCode, resultCode, data);
                     Log.d("TAG", "NOT OK");
                 }
                 break;
