@@ -12,6 +12,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -25,36 +27,45 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.zxing.client.android.Intents;
 import com.google.zxing.integration.android.IntentIntegrator;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 
-public class MainActivity extends Activity implements View.OnClickListener{
+public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
     private Button mReadBtn;
     private TextView mResult;
     private FirebaseAuth mFirebaseAuth;
-    private DatabaseReference mDatabaseRef;
+    private DatabaseReference mDatabaseRef, currDatabaseRef;
     int tokenNumber;
+    String existDate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        /********************************************/
+        /*
+         * custom tool bar
+         * */
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        TextView toolbar_title = toolbar.findViewById(R.id.toolbar_title);
+        toolbar_title.setText(getSupportActionBar().getTitle());
+        getSupportActionBar().setTitle(null);
+        /*******************************************/
+
+
         mReadBtn = (Button)findViewById(R.id.capture);
         mResult = (TextView)findViewById(R.id.result);
         mReadBtn.setOnClickListener(this);
 
-//        FirebaseDatabase database = FirebaseDatabase.getInstance();
-//        DatabaseReference myRef = database.getReference("project").child("UserAccount").child("xWbql1fD4bQuMt6hWNbkinwrCSH2").child("Tokens").child("백반");
 
-//        UserToken userToken = new UserToken();
-//        userToken.setMenuName("menuName");
-//        userToken.setMenuPrice(999999);
-//        userToken.setTokenNumber(9999);
-//        userToken.setPayMethod("payMethod");
-//
-//        myRef.setValue(userToken);
 
     }
 
@@ -64,6 +75,7 @@ public class MainActivity extends Activity implements View.OnClickListener{
         IntentIntegrator integrator = new IntentIntegrator(this);
         integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE);
         integrator.setOrientationLocked(false);
+        integrator.setPrompt("Scanning ...");
         integrator.initiateScan();
     }
 
@@ -112,16 +124,50 @@ public class MainActivity extends Activity implements View.OnClickListener{
 
                                             tokenNumber = tokenNumber - 1; // 식권 한 개 사용
 
-                                            UserToken userToken = new UserToken();
-                                            userToken.setMenuName(menuName);
-                                            userToken.setMenuPrice(menuPrice);
-                                            userToken.setTokenNumber(tokenNumber);
-                                            userToken.setPayMethod(payMethod);
+                                            if(tokenNumber == 0){
+                                                mDatabaseRef.child("UserAccount").child(UID).child("Tokens").child(menuName).removeValue();
+                                            }else {
 
-                                            mResult.setText(menuName +"\n" + payMethod);
-                                            mDatabaseRef.child("UserAccount").child(UID).child("Tokens").child(menuName).setValue(userToken);
+                                                UserToken userToken = new UserToken();
+                                                userToken.setMenuName(menuName);
+                                                userToken.setMenuPrice(menuPrice);
+                                                userToken.setTokenNumber(tokenNumber);
+                                                userToken.setPayMethod(payMethod);
 
-                                            Toast.makeText(getApplicationContext(), menuName + "식권 사용", Toast.LENGTH_LONG).show();
+                                                mResult.setText(menuName + "\n 식권 사용");
+                                                mDatabaseRef.child("UserAccount").child(UID).child("Tokens").child(menuName).setValue(userToken);
+
+                                                /**
+                                                 *  저장된 currentUser 데이터를 읽어와서 str에 추가하기 위함
+                                                 * */
+                                                currDatabaseRef = FirebaseDatabase.getInstance().getReference("project");
+                                                currDatabaseRef.child("CurrentUser").get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
+                                                    @Override
+                                                    public void onComplete(@NonNull Task<DataSnapshot> task) {
+                                                        if(task.isSuccessful()) {
+                                                            if (task.getResult().exists()) {
+                                                                DataSnapshot dataSnapshot = task.getResult();
+                                                                existDate = String.valueOf(dataSnapshot.getValue());
+
+                                                            }else{
+                                                                existDate = "";
+                                                                Toast.makeText(getApplicationContext(), "저장된 데이터 없음", Toast.LENGTH_LONG).show();
+                                                            }
+                                                            Date today = new Date();
+                                                            DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); //혼잡도 확인을 위한 시간 기록
+                                                            String strDate = existDate + df.format(today) + "sep";
+                                                            currDatabaseRef.child("CurrentUser").setValue(strDate);
+                                                        }else{
+                                                            Toast.makeText(getApplicationContext(), "실패", Toast.LENGTH_LONG).show();
+                                                        }
+
+                                                    }
+                                                });
+
+
+
+                                            }
+                                            Toast.makeText(getApplicationContext(), menuName + " 식권 사용" , Toast.LENGTH_LONG).show();
                                         }else{
 
                                             Toast.makeText(getApplicationContext(), "실패1", Toast.LENGTH_LONG).show();
@@ -132,13 +178,6 @@ public class MainActivity extends Activity implements View.OnClickListener{
                                     }
                                 }
                             });
-
-
-
-
-
-
-                    mResult.setText(menuName +"\n"+menuName.length()+"\n" +menuName.getClass().getName()+ "\n\n" + UID +"\n"+UID.length()+ "\n" +UID.getClass().getName()) ;
                 } else {
                     super.onActivityResult(requestCode, resultCode, data);
                     Log.d("TAG", "NOT OK");

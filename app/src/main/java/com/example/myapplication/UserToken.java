@@ -7,6 +7,7 @@ public class UserToken {
     private String payMethod;
     private String menuName;
 
+
     public String getMenuName() {
         return menuName;
     }
