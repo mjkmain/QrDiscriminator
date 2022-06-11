@@ -53,9 +53,11 @@
         app:layout_constraintBottom_toBottomOf="parent" />
 
     <TextView
+        android:id="@+id/tv"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
+        android:textSize="18sp"
         android:text="QR코드 값"
         app:layout_constraintBottom_toTopOf="@+id/capture"
         app:layout_constraintTop_toTopOf="parent" />

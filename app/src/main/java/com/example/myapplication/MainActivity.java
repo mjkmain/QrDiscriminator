@@ -43,6 +43,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private DatabaseReference mDatabaseRef, currDatabaseRef;
     int tokenNumber;
     String existDate;
+    TextView tv;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mReadBtn = (Button)findViewById(R.id.capture);
         mResult = (TextView)findViewById(R.id.result);
         mReadBtn.setOnClickListener(this);
+        tv = findViewById(R.id.tv);
 
 
 
@@ -168,6 +170,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                                             }
                                             Toast.makeText(getApplicationContext(), menuName + " 식권 사용" , Toast.LENGTH_LONG).show();
+                                            tv.setText(menuName + " 식권 사용");
                                         }else{
 
                                             Toast.makeText(getApplicationContext(), "실패1", Toast.LENGTH_LONG).show();
